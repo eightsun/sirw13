@@ -4,6 +4,15 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
 
+interface UserRoleData {
+  role: string;
+  rt_id: number | null;
+  rt?: {
+    kode: string;
+    nama: string;
+  } | null;
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   
@@ -20,10 +29,10 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('role', { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle() as { data: UserRoleData | null };
 
   const role = userRoles?.role || 'warga';
-  const rtInfo = userRoles?.rt as any;
+  const rtInfo = userRoles?.rt;
 
   // Get stats
   const { count: totalWarga } = await supabase
@@ -117,70 +126,3 @@ export default async function DashboardPage() {
               </div>
             </div>
           </Card>
-
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Rumah Kosong</p>
-                <p className="text-3xl font-bold text-gray-900">{rumahKosong}</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Menu Cards */}
-        <Card title="Menu Utama" className="mb-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link 
-              href="/dashboard/warga" 
-              className="block p-4 border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
-            >
-              <h4 className="font-medium text-gray-900 mb-1">Data Warga</h4>
-              <p className="text-sm text-gray-600">Kelola data warga</p>
-            </Link>
-            <Link 
-              href="/dashboard/kk" 
-              className="block p-4 border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
-            >
-              <h4 className="font-medium text-gray-900 mb-1">Data KK</h4>
-              <p className="text-sm text-gray-600">Kelola Kartu Keluarga</p>
-            </Link>
-            <Link 
-              href="/dashboard/rumah" 
-              className="block p-4 border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
-            >
-              <h4 className="font-medium text-gray-900 mb-1">Data Rumah</h4>
-              <p className="text-sm text-gray-600">Kelola data rumah</p>
-            </Link>
-            <div className="block p-4 border border-gray-200 rounded-lg bg-gray-50">
-              <h4 className="font-medium text-gray-500 mb-1">Laporan</h4>
-              <p className="text-sm text-gray-400">Coming soon</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Info Card */}
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-primary-900 mb-2">
-            🎉 Sistem Siap Digunakan
-          </h3>
-          <p className="text-primary-800 mb-4">
-            Database dan RLS sudah aktif. Anda dapat mulai mengelola data warga, KK, dan rumah sesuai dengan role Anda.
-          </p>
-          <ul className="text-sm text-primary-700 space-y-1">
-            <li>✅ CRUD Data Warga, KK, dan Rumah</li>
-            <li>✅ Row Level Security (RLS) aktif</li>
-            <li>✅ Dashboard dengan statistik real-time</li>
-            <li>✅ Role-based access control</li>
-            <li>🔜 Fase 2: Iuran Fasilitas Bulanan (coming soon)</li>
-          </ul>
-        </div>
-      </main>
-    </div>
-  );
-}
