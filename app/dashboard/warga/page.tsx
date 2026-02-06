@@ -25,10 +25,10 @@ export default async function WargaPage() {
 
   const role = userRoleData?.role || 'warga';
 
-  // Fetch warga data - SIMPLIFIED QUERY (no nested select)
+  // Fetch warga data
   const { data: wargaList, error: fetchError } = await supabase
     .from('persons')
-    .select('id, nik, no_kk, nama, tanggal_lahir, jenis_kelamin, rt_id, no_hp, created_at, deleted_at')
+    .select('*')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -48,7 +48,7 @@ export default async function WargaPage() {
       header: 'NIK',
       accessor: (row: any) => {
         const nik = row.nik || '';
-        // Mask NIK untuk privacy (hanya untuk warga biasa)
+        // Mask NIK untuk privacy
         if (role === 'warga' && row.user_id !== user.id) {
           return `****-****-${nik.slice(-4)}`;
         }
@@ -75,14 +75,9 @@ export default async function WargaPage() {
     {
       header: 'RT',
       accessor: (row: any) => {
-        // RT ID to kode mapping
         const rtMap: Record<number, string> = {
-          1: 'RT 01',
-          2: 'RT 02',
-          3: 'RT 03',
-          4: 'RT 04',
-          5: 'RT 05',
-          6: 'RT 06',
+          1: 'RT 01', 2: 'RT 02', 3: 'RT 03',
+          4: 'RT 04', 5: 'RT 05', 6: 'RT 06',
         };
         return rtMap[row.rt_id] || '-';
       },
@@ -90,7 +85,6 @@ export default async function WargaPage() {
     {
       header: 'No HP',
       accessor: (row: any) => {
-        // Only show to authorized roles
         if (role === 'warga' && row.user_id !== user.id) {
           return '***';
         }
@@ -101,7 +95,7 @@ export default async function WargaPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar user={{ email: user.email, role: getRoleLabel(role) }} />
+      <Navbar user={{ email: user.email || '', role: getRoleLabel(role) }} />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
@@ -113,9 +107,7 @@ export default async function WargaPage() {
           </div>
           {(role === 'ketua_rw' || role === 'ketua_rt' || role === 'koordinator_rw') && (
             <Link href="/dashboard/warga/new">
-              <Button>
-                + Tambah Warga
-              </Button>
+              <Button>+ Tambah Warga</Button>
             </Link>
           )}
         </div>
@@ -132,7 +124,7 @@ export default async function WargaPage() {
               Total: <strong>{wargaList?.length || 0}</strong> warga
             </p>
             <div className="text-sm text-gray-500">
-              Menampilkan data sesuai akses Anda sebagai <strong>{getRoleLabel(role)}</strong>
+              Role: <strong>{getRoleLabel(role)}</strong>
             </div>
           </div>
 
@@ -140,9 +132,6 @@ export default async function WargaPage() {
             <Table
               data={wargaList}
               columns={columns}
-              onRowClick={(row) => {
-                console.log('Row clicked:', row);
-              }}
               emptyMessage="Belum ada data warga"
             />
           ) : (
@@ -153,9 +142,7 @@ export default async function WargaPage() {
               <p className="mt-4 text-gray-600">Belum ada data warga</p>
               {(role === 'ketua_rw' || role === 'ketua_rt' || role === 'koordinator_rw') && (
                 <Link href="/dashboard/warga/new">
-                  <Button className="mt-4">
-                    Tambah Warga Pertama
-                  </Button>
+                  <Button className="mt-4">Tambah Warga Pertama</Button>
                 </Link>
               )}
             </div>
