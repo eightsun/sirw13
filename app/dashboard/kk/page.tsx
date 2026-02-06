@@ -3,6 +3,10 @@ import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card } from '@/components/ui/Card';
 
+interface UserRole {
+  role: string;
+}
+
 export default async function KKPage() {
   const supabase = await createClient();
   
@@ -12,13 +16,13 @@ export default async function KKPage() {
     redirect('/auth/login');
   }
 
-const { data: userRoles } = await supabase
-  .from('user_roles')
-  .select('role')
-  .eq('user_id', user.id)
-  .maybeSingle();
+  const { data: userRoles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .maybeSingle() as { data: UserRole | null };
 
-const role = (userRoles?.role as string) || 'warga';
+  const role = userRoles?.role || 'warga';
 
   const getRoleLabel = (role: string) => {
     const roleMap: Record<string, string> = {
