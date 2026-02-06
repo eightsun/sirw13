@@ -1,13 +1,9 @@
-'use client';
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card } from '@/components/ui/Card';
-import { Table } from '@/components/ui/Table';
-import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { formatDate, calculateAge } from '@/lib/utils/helpers';
+import { calculateAge } from '@/lib/utils/helpers';
 
 export default async function WargaPage() {
   const supabase = await createClient();
@@ -45,55 +41,10 @@ export default async function WargaPage() {
     return roleMap[role] || role;
   };
 
-  const columns = [
-    {
-      header: 'NIK',
-      accessor: (row: any) => {
-        const nik = row.nik || '';
-        // Mask NIK untuk privacy
-        if (role === 'warga' && row.user_id !== user.id) {
-          return `****-****-${nik.slice(-4)}`;
-        }
-        return nik;
-      },
-    },
-    {
-      header: 'Nama',
-      accessor: 'nama' as const,
-    },
-    {
-      header: 'Umur',
-      accessor: (row: any) => {
-        const age = calculateAge(row.tanggal_lahir);
-        return age ? `${age} tahun` : '-';
-      },
-    },
-    {
-      header: 'Jenis Kelamin',
-      accessor: (row: any) => {
-        return row.jenis_kelamin === 'L' ? 'Laki-laki' : row.jenis_kelamin === 'P' ? 'Perempuan' : '-';
-      },
-    },
-    {
-      header: 'RT',
-      accessor: (row: any) => {
-        const rtMap: Record<number, string> = {
-          1: 'RT 01', 2: 'RT 02', 3: 'RT 03',
-          4: 'RT 04', 5: 'RT 05', 6: 'RT 06',
-        };
-        return rtMap[row.rt_id] || '-';
-      },
-    },
-    {
-      header: 'No HP',
-      accessor: (row: any) => {
-        if (role === 'warga' && row.user_id !== user.id) {
-          return '***';
-        }
-        return row.no_hp || '-';
-      },
-    },
-  ];
+  const rtMap: Record<number, string> = {
+    1: 'RT 01', 2: 'RT 02', 3: 'RT 03',
+    4: 'RT 04', 5: 'RT 05', 6: 'RT 06',
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -103,21 +54,22 @@ export default async function WargaPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Data Warga</h2>
-            <p className="text-gray-600">
-              Kelola data warga RW 13 Permata Discovery
-            </p>
+            <p className="text-gray-600">Kelola data warga RW 13 Permata Discovery</p>
           </div>
           {(role === 'ketua_rw' || role === 'ketua_rt' || role === 'koordinator_rw') && (
-            <Link href="/dashboard/warga/new">
-              <Button>+ Tambah Warga</Button>
+            <Link 
+              href="/dashboard/warga/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              + Tambah Warga
             </Link>
           )}
         </div>
 
         {fetchError && (
-          <Card className="mb-4 bg-red-50 border-red-200">
-            <p className="text-red-800">Error loading data: {fetchError.message}</p>
-          </Card>
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">Error: {fetchError.message}</p>
+          </div>
         )}
 
         <Card>
@@ -131,32 +83,56 @@ export default async function WargaPage() {
           </div>
 
           {wargaList && wargaList.length > 0 ? (
-            <Table
-              data={wargaList}
-              columns={columns}
-              emptyMessage="Belum ada data warga"
-            />
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIK</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Kelamin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RT</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No HP</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {wargaList.map((warga: any) => {
+                    const nik = warga.nik || '';
+                    const maskedNik = role === 'warga' && warga.user_id !== user.id 
+                      ? `****-****-${nik.slice(-4)}` 
+                      : nik;
+                    const age = calculateAge(warga.tanggal_lahir);
+                    const gender = warga.jenis_kelamin === 'L' ? 'Laki-laki' : warga.jenis_kelamin === 'P' ? 'Perempuan' : '-';
+                    const rt = rtMap[warga.rt_id] || '-';
+                    const noHp = (role === 'warga' && warga.user_id !== user.id) ? '***' : (warga.no_hp || '-');
+
+                    return (
+                      <tr key={warga.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{maskedNik}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{warga.nama}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{age ? `${age} tahun` : '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{gender}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rt}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{noHp}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="text-center py-12">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <p className="mt-4 text-gray-600">Belum ada data warga</p>
-              {(role === 'ketua_rw' || role === 'ketua_rt' || role === 'koordinator_rw') && (
-                <Link href="/dashboard/warga/new">
-                  <Button className="mt-4">Tambah Warga Pertama</Button>
-                </Link>
-              )}
             </div>
           )}
         </Card>
 
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            <strong>ℹ️ Informasi:</strong> Data yang ditampilkan disesuaikan dengan role Anda. 
-            {role === 'warga' && ' Sebagai warga, Anda hanya dapat melihat data terbatas untuk privasi.'}
-            {role === 'ketua_rt' && ' Sebagai Ketua RT, Anda dapat melihat dan mengelola data warga di RT Anda.'}
-            {(role === 'ketua_rw' || role === 'koordinator_rw') && ' Anda memiliki akses penuh ke semua data warga RW 13.'}
+            <strong>ℹ️ Informasi:</strong> Data yang ditampilkan disesuaikan dengan role Anda.
           </p>
         </div>
       </main>
