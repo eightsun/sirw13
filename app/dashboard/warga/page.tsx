@@ -17,22 +17,18 @@ export default async function WargaPage() {
   }
 
   // Get user role
-  const { data: userRoles } = await supabase
+  const { data: userRoleData } = await supabase
     .from('user_roles')
     .select('role, rt_id')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  const role = userRoles?.role || 'warga';
+  const role = userRoleData?.role || 'warga';
 
-  // Fetch warga data (RLS akan filter otomatis sesuai role)
+  // Fetch warga data - SIMPLIFIED QUERY (no nested select)
   const { data: wargaList, error: fetchError } = await supabase
     .from('persons')
-    .select(`
-      *,
-      household:households(no_kk, nama_kepala_keluarga),
-      rt:rt_id(kode, nama)
-    `)
+    .select('id, nik, no_kk, nama, tanggal_lahir, jenis_kelamin, rt_id, no_hp, created_at, deleted_at')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -51,8 +47,8 @@ export default async function WargaPage() {
     {
       header: 'NIK',
       accessor: (row: any) => {
-        // Mask NIK untuk privacy - hanya tunjukkan 4 digit terakhir
         const nik = row.nik || '';
+        // Mask NIK untuk privacy (hanya untuk warga biasa)
         if (role === 'warga' && row.user_id !== user.id) {
           return `****-****-${nik.slice(-4)}`;
         }
@@ -78,7 +74,18 @@ export default async function WargaPage() {
     },
     {
       header: 'RT',
-      accessor: (row: any) => row.rt?.kode || '-',
+      accessor: (row: any) => {
+        // RT ID to kode mapping
+        const rtMap: Record<number, string> = {
+          1: 'RT 01',
+          2: 'RT 02',
+          3: 'RT 03',
+          4: 'RT 04',
+          5: 'RT 05',
+          6: 'RT 06',
+        };
+        return rtMap[row.rt_id] || '-';
+      },
     },
     {
       header: 'No HP',
@@ -134,7 +141,6 @@ export default async function WargaPage() {
               data={wargaList}
               columns={columns}
               onRowClick={(row) => {
-                // Navigate to detail (coming soon)
                 console.log('Row clicked:', row);
               }}
               emptyMessage="Belum ada data warga"
