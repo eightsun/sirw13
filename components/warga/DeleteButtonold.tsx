@@ -71,4 +71,5 @@ export function DeleteButton({ wargaId, wargaNama }: DeleteButtonProps) {
       Hapus
     </button>
   );
+
 }
