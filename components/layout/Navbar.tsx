@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils/helpers';
 
 interface NavItem {
@@ -19,6 +20,8 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -27,18 +30,22 @@ export function Navbar({ user }: NavbarProps) {
     { label: 'Data Rumah', href: '/dashboard/rumah' },
   ];
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/auth/login');
+    router.refresh();
+  };
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center">
               <h1 className="text-xl font-bold text-primary-900">SIRW13</h1>
             </Link>
           </div>
 
-          {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link
@@ -56,7 +63,6 @@ export function Navbar({ user }: NavbarProps) {
             ))}
           </div>
 
-          {/* User Info & Logout */}
           <div className="flex items-center gap-4">
             {user && (
               <div className="hidden md:block text-right">
@@ -64,18 +70,15 @@ export function Navbar({ user }: NavbarProps) {
                 <p className="text-xs text-gray-600">{user.role}</p>
               </div>
             )}
-            <form action="/auth/logout" method="post">
-              <button
-                type="submit"
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
-              >
-                Keluar
-              </button>
-            </form>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-red-600 hover:text-red-700 font-medium"
+            >
+              Keluar
+            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         <div className="md:hidden pb-3 pt-2 space-y-1">
           {navItems.map((item) => (
             <Link
