@@ -12,13 +12,13 @@ export default async function KKPage() {
     redirect('/auth/login');
   }
 
-  const { data: userRoles } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
+const { data: userRoles } = await supabase
+  .from('user_roles')
+  .select('role')
+  .eq('user_id', user.id)
+  .maybeSingle();
 
-  const role = userRoles?.role || 'warga';
+const role = (userRoles?.role as string) || 'warga';
 
   const getRoleLabel = (role: string) => {
     const roleMap: Record<string, string> = {
