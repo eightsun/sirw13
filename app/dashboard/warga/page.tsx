@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
 import { calculateAge } from '@/lib/utils/helpers';
+import { DeleteButton } from '@/components/warga/DeleteButton';
 
 export default async function WargaPage() {
   const supabase = await createClient();
@@ -29,7 +30,7 @@ export default async function WargaPage() {
     .select('*')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(100);
 
   const getRoleLabel = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -46,6 +47,8 @@ export default async function WargaPage() {
     4: 'RT 04', 5: 'RT 05', 6: 'RT 06',
   };
 
+  const canEdit = ['ketua_rw', 'ketua_rt', 'koordinator_rw'].includes(role);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar user={{ email: user.email || '', role: getRoleLabel(role) }} />
@@ -56,7 +59,7 @@ export default async function WargaPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Data Warga</h2>
             <p className="text-gray-600">Kelola data warga RW 13 Permata Discovery</p>
           </div>
-          {(role === 'ketua_rw' || role === 'ketua_rt' || role === 'koordinator_rw') && (
+          {canEdit && (
             <Link 
               href="/dashboard/warga/new"
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -87,12 +90,16 @@ export default async function WargaPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIK</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Kelamin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RT</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No HP</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIK</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RT</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No HP</th>
+                    {canEdit && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -105,15 +112,44 @@ export default async function WargaPage() {
                     const gender = warga.jenis_kelamin === 'L' ? 'Laki-laki' : warga.jenis_kelamin === 'P' ? 'Perempuan' : '-';
                     const rt = rtMap[warga.rt_id] || '-';
                     const noHp = (role === 'warga' && warga.user_id !== user.id) ? '***' : (warga.no_hp || '-');
+                    const photoUrl = warga.extra_fields?.photo_url;
 
                     return (
                       <tr key={warga.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{maskedNik}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{warga.nama}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{age ? `${age} tahun` : '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{gender}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rt}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{noHp}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {photoUrl ? (
+                            <img 
+                              src={photoUrl} 
+                              alt={warga.nama}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-xs font-semibold">
+                                {warga.nama?.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{maskedNik}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{warga.nama}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{age ? `${age} tahun` : '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{gender}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{rt}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{noHp}</td>
+                        {canEdit && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/dashboard/warga/${warga.id}/edit`}
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Edit
+                              </Link>
+                              <DeleteButton wargaId={warga.id} wargaNama={warga.nama} />
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
