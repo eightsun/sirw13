@@ -95,7 +95,7 @@ export async function createWarga(formData: FormData) {
   }
 
   revalidatePath('/dashboard/warga');
-  redirect('/dashboard/warga');
+  return { success: true };  // ← Just return success
 }
 
 export async function updateWarga(id: number, formData: FormData) {
