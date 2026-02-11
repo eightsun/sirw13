@@ -29,23 +29,38 @@ export function WargaForm({ warga, rtList, mode }: WargaFormProps) {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+  const formData = new FormData(e.currentTarget);
 
-    try {
-      if (mode === 'create') {
-        await createWarga(formData);
-      } else {
-        await updateWarga(warga.id, formData);
-      }
-    } catch (error) {
-      console.error('Form error:', error);
-      alert('Terjadi kesalahan. Silakan coba lagi.');
-      setLoading(false);
+  try {
+    let result;
+    if (mode === 'create') {
+      result = await createWarga(formData);
+    } else {
+      result = await updateWarga(warga.id, formData);
     }
-  };
+    
+    console.log('Server result:', result);
+    
+    // Check for error
+    if (result && result.error) {
+      alert('Error: ' + result.error);
+      setLoading(false);
+      return;
+    }
+    
+    // Success - force redirect
+    console.log('Success! Redirecting...');
+    window.location.href = '/dashboard/warga';
+    
+  } catch (error: any) {
+    console.error('Form error:', error);
+    alert('Terjadi kesalahan: ' + (error.message || error.toString()));
+    setLoading(false);
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
