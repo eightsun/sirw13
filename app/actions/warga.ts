@@ -38,14 +38,14 @@ export async function createWarga(formData: FormData) {
 
   if (!existingHousehold) {
     // Create household first
-    const { error: hhError } = await supabase
-      .from('households')
-      .insert({
-        no_kk: data.no_kk,
-        nama_kepala_keluarga: data.nama,
-        tanggal_mulai_tinggal: new Date().toISOString().split('T')[0],
-        status: 'aktif',
-      });
+   const { error: hhError } = await supabase
+  .from('households')
+  .insert({
+    no_kk: data.no_kk,
+    nama_kepala_keluarga: data.nama,
+    tanggal_mulai_huni: new Date().toISOString().split('T')[0],  // ✅ CORRECT!
+    status: 'aktif',
+  });
 
     if (hhError) {
       console.error('Household creation error:', hhError);
