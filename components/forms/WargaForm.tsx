@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { createWarga, updateWarga } from '@/app/actions/warga';
+import { updateProfile } from '@/app/actions/profile';
 
 interface WargaFormProps {
   warga?: any;
   rtList: Array<{ id: number; kode: string; nama: string }>;
   mode: 'create' | 'edit';
+  isProfileMode?: boolean;
 }
 
-export function WargaForm({ warga, rtList, mode }: WargaFormProps) {
+export function WargaForm({ warga, rtList, mode, isProfileMode = false }: WargaFormProps) {
   const [loading, setLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     warga?.extra_fields?.photo_url || null
@@ -28,45 +30,50 @@ export function WargaForm({ warga, rtList, mode }: WargaFormProps) {
     }
   };
 
- import { updateProfile } from '@/app/actions/profile';
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setLoading(true);
+    console.log('=== FORM SUBMIT START ===');
+    const formData = new FormData(e.currentTarget);
 
-  const formData = new FormData(e.currentTarget);
-
-  try {
-    let result;
-    if (mode === 'create') {
-      result = await createWarga(formData);
-    } else if (mode === 'edit' && isProfileMode) {
-      // User editing own profile
-      result = await updateProfile(formData);
-    } else {
-      // Admin editing warga data
-      result = await updateWarga(warga.id, formData);
-    }
-    
-    console.log('Server result:', result);
-    
-    // Check for error
-    if (result && result.error) {
-      alert('Error: ' + result.error);
+    try {
+      let result;
+      if (mode === 'create') {
+        console.log('Calling createWarga...');
+        result = await createWarga(formData);
+      } else if (isProfileMode) {
+        console.log('Calling updateProfile...');
+        result = await updateProfile(formData);
+      } else {
+        console.log('Calling updateWarga...');
+        result = await updateWarga(warga.id, formData);
+      }
+      
+      console.log('Result from server:', result);
+      
+      if (result && result.error) {
+        console.error('Server returned error:', result.error);
+        alert('Error: ' + result.error);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('No error detected, redirecting...');
+      
+      setTimeout(() => {
+        console.log('Executing redirect...');
+        window.location.href = '/dashboard/warga';
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Exception during submit:', error);
+      alert('Terjadi kesalahan: ' + (error.message || error.toString()));
       setLoading(false);
-      return;
     }
     
-    // Success - force redirect
-    console.log('Success! Redirecting...');
-    window.location.href = '/dashboard/warga';
-    
-  } catch (error: any) {
-    console.error('Form error:', error);
-    alert('Terjadi kesalahan: ' + (error.message || error.toString()));
-    setLoading(false);
-  }
-};
+    console.log('=== FORM SUBMIT END ===');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
