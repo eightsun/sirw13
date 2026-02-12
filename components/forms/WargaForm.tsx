@@ -61,9 +61,12 @@ export function WargaForm({ warga, rtList, mode, isProfileMode = false }: WargaF
       
       console.log('No error detected, redirecting...');
       
+      // Redirect based on mode
+      const redirectUrl = isProfileMode ? '/dashboard' : '/dashboard/warga';
+      
       setTimeout(() => {
-        console.log('Executing redirect...');
-        window.location.href = '/dashboard/warga';
+        console.log('Executing redirect to:', redirectUrl);
+        window.location.href = redirectUrl;
       }, 100);
       
     } catch (error: any) {
