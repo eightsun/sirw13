@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { deleteKK } from '@/app/actions/kk';
+import { DeleteKKButton } from '@/components/buttons/DeleteKKButton';
 
 export default async function KKPage() {
   const supabase = await createClient();
@@ -217,19 +217,7 @@ export default async function KKPage() {
                             >
                               Edit
                             </a>
-                            <form action={deleteKK.bind(null, kk.id)} method="POST" className="inline">
-                              <button
-                                type="submit"
-                                onClick={(e) => {
-                                  if (!confirm('Yakin ingin menghapus KK ini?')) {
-                                    e.preventDefault();
-                                  }
-                                }}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                Hapus
-                              </button>
-                            </form>
+                            <DeleteKKButton kkId={kk.id} kkName={kk.nama_kepala_keluarga} />
                           </div>
                         </td>
                       )}
