@@ -45,14 +45,39 @@ export default async function ProfileEditPage() {
     console.log('No warga entry found in profile edit, creating...');
     
     const userName = user.user_metadata?.nama || user.email?.split('@')[0] || 'User';
+    const placeholderNoKK = '0000000000000000';
     
+    // First, create household if doesn't exist
+    const { data: existingHousehold } = await supabase
+      .from('households')
+      .select('no_kk')
+      .eq('no_kk', placeholderNoKK)
+      .maybeSingle();
+    
+    if (!existingHousehold) {
+      console.log('Creating placeholder household...');
+      const { error: hhError } = await supabase
+        .from('households')
+        .insert({
+          no_kk: placeholderNoKK,
+          nama_kepala_keluarga: userName,
+          tanggal_mulai_huni: new Date().toISOString().split('T')[0],
+          status: 'aktif',
+        });
+      
+      if (hhError) {
+        console.error('Error creating household:', hhError);
+      }
+    }
+    
+    // Now create person entry
     const { data: newWarga, error: createError } = await supabase
       .from('persons')
       .insert({
         email: user.email,
         nama: userName,
         nik: '0000000000000000',
-        no_kk: '0000000000000000',
+        no_kk: placeholderNoKK,
         rt_id: 1,
         tempat_lahir: 'N/A',
         tanggal_lahir: '2000-01-01',
