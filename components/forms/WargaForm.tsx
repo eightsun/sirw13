@@ -28,7 +28,9 @@ export function WargaForm({ warga, rtList, mode }: WargaFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+ import { updateProfile } from '@/app/actions/profile';
+
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setLoading(true);
 
@@ -38,7 +40,11 @@ export function WargaForm({ warga, rtList, mode }: WargaFormProps) {
     let result;
     if (mode === 'create') {
       result = await createWarga(formData);
+    } else if (mode === 'edit' && isProfileMode) {
+      // User editing own profile
+      result = await updateProfile(formData);
     } else {
+      // Admin editing warga data
       result = await updateWarga(warga.id, formData);
     }
     
