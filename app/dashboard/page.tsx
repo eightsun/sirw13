@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
+import { isProfileComplete } from '@/lib/profile-helpers';
 import { 
   UsersIcon, 
   HomeIcon, 
@@ -16,6 +17,14 @@ export default async function DashboardPage() {
   
   if (error || !user) {
     redirect('/auth/login');
+  }
+
+  // Check if profile is complete
+  const profileComplete = await isProfileComplete();
+  
+  if (!profileComplete) {
+    // Redirect to profile edit on first login or incomplete profile
+    redirect('/dashboard/profile/edit');
   }
 
   // Get user role
@@ -150,34 +159,41 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Aksi Cepat</h2>
             <div className="space-y-3">
-              <a
-                href="/dashboard/warga/new"
-                className="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center font-medium"
-              >
-                + Tambah Warga
-              </a>
-              
-              <a
-                href="/dashboard/kk/new"
-                className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium"
-              >
-                + Tambah KK
-              </a>
-              
-              <a
-                href="/dashboard/rumah/new"
-                className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center font-medium"
-              >
-                + Tambah Rumah
-              </a>
+              {(role === 'ketua_rw' || role === 'koordinator_rw' || role === 'ketua_rt') && (
+                <>
+                  <a
+                    href="/dashboard/warga/new"
+                    className="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center font-medium"
+                  >
+                    + Tambah Warga
+                  </a>
+                  
+                  <a
+                    href="/dashboard/kk/new"
+                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium"
+                  >
+                    + Tambah KK
+                  </a>
+                  
+                  <a
+                    href="/dashboard/rumah/new"
+                    className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center font-medium"
+                  >
+                    + Tambah Rumah
+                  </a>
+                </>
+              )}
 
               <div className="pt-4 border-t border-gray-200 mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Laporan</p>
+                <p className="text-sm font-medium text-gray-700 mb-3">Profil Saya</p>
+                <a
+                  href="/dashboard/profile/edit"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
+                >
+                  ✏️ Edit Profil
+                </a>
                 <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  📊 Export Data Warga
-                </button>
-                <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  📈 Statistik Bulanan
+                  📊 Lihat Data Saya
                 </button>
               </div>
             </div>
