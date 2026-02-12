@@ -40,14 +40,39 @@ export default async function DashboardPage() {
     console.log('No warga entry found for', user.email, '- creating...');
     
     const userName = user.user_metadata?.nama || user.email?.split('@')[0] || 'User';
+    const placeholderNoKK = '0000000000000000';
     
+    // First, create household if doesn't exist
+    const { data: existingHousehold } = await supabase
+      .from('households')
+      .select('no_kk')
+      .eq('no_kk', placeholderNoKK)
+      .maybeSingle();
+    
+    if (!existingHousehold) {
+      console.log('Creating placeholder household...');
+      const { error: hhError } = await supabase
+        .from('households')
+        .insert({
+          no_kk: placeholderNoKK,
+          nama_kepala_keluarga: userName,
+          tanggal_mulai_huni: new Date().toISOString().split('T')[0],
+          status: 'aktif',
+        });
+      
+      if (hhError) {
+        console.error('Error creating household:', hhError);
+      }
+    }
+    
+    // Now create person entry
     const { error: createError } = await supabase
       .from('persons')
       .insert({
         email: user.email,
         nama: userName,
         nik: '0000000000000000', // Placeholder - user will update
-        no_kk: '0000000000000000', // Placeholder
+        no_kk: placeholderNoKK, // Placeholder
         rt_id: 1, // Default RT 01
         tempat_lahir: 'N/A',
         tanggal_lahir: '2000-01-01',
