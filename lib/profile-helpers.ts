@@ -55,14 +55,39 @@ export async function createUserWarga(email: string, nama: string) {
   
   if (existing) return existing;
   
-  // Create minimal record
+  const placeholderNoKK = '0000000000000000';
+  
+  // First, create household if doesn't exist
+  const { data: existingHousehold } = await supabase
+    .from('households')
+    .select('no_kk')
+    .eq('no_kk', placeholderNoKK)
+    .maybeSingle();
+  
+  if (!existingHousehold) {
+    console.log('Creating placeholder household for new user...');
+    const { error: hhError } = await supabase
+      .from('households')
+      .insert({
+        no_kk: placeholderNoKK,
+        nama_kepala_keluarga: nama,
+        tanggal_mulai_huni: new Date().toISOString().split('T')[0],
+        status: 'aktif',
+      });
+    
+    if (hhError) {
+      console.error('Error creating household:', hhError);
+    }
+  }
+  
+  // Create minimal person record
   const { data, error } = await supabase
     .from('persons')
     .insert({
       email: email,
       nama: nama,
       nik: '0000000000000000', // Placeholder - user will update
-      no_kk: '0000000000000000', // Placeholder
+      no_kk: placeholderNoKK, // Placeholder
       rt_id: 1, // Default RT 01
       tempat_lahir: 'N/A',
       tanggal_lahir: '2000-01-01',
